@@ -1,14 +1,15 @@
 import requests
 import datetime
-from urllib.parse import urljoin
+
 
 def get_repos_url():
-    return urljoin('https://api.github.com', '/search/repositories')
+    return 'https://api.github.com/search/repositories'
+
 
 def get_issues_url(repo_owner, repo_name):
-    return urljoin(
-        'https://api.github.com',
-        '/repos/{}/{}/issues'.format(repo_owner, repo_name))
+    return 'https://api.github.com/repos/{}/{}/issues'.format(
+        repo_owner, repo_name
+    )
 
 
 def get_trending_repositories(top_size=20):
@@ -29,13 +30,12 @@ def get_trending_repositories(top_size=20):
         return response.json().get('items')
 
 
-
 def get_open_issues_amount(repo_owner, repo_name):
     issues_url = get_issues_url(repo_owner, repo_name)
 
-    request_response = requests.get(url=issues_url)
-    if request_response.ok:
-        return len(request_response.json())
+    response = requests.get(url=issues_url)
+    if response.ok:
+        return len(response.json())
 
 
 def get_issues_by_list(repos_list):
@@ -67,7 +67,6 @@ if __name__ == '__main__':
     repos_list = get_trending_repositories(top_size=20)
     if not repos_list:
         exit("Can't get repos list")
-
 
     repos_list = get_issues_by_list(repos_list)
     print_repos(repos_list)

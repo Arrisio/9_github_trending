@@ -2,19 +2,17 @@ import requests
 import datetime
 
 
-def get_repos_url():
-    return 'https://api.github.com/search/repositories'
+def get_issues_url(
+        repo_owner, repo_name,
+        issues_url_template='https://api.github.com/repos/{}/{}/issues'
+):
+    return issues_url_template.format(repo_owner, repo_name)
 
 
-def get_issues_url(repo_owner, repo_name):
-    return 'https://api.github.com/repos/{}/{}/issues'.format(
-        repo_owner, repo_name
-    )
-
-
-def get_trending_repositories(top_size=20):
-    repos_url = get_repos_url()
-
+def get_trending_repositories(
+        top_size=20,
+        repos_url='https://api.github.com/search/repositories'
+):
     week_ago_date_str = (
             datetime.date.today() - datetime.timedelta(days=7)
     ).isoformat()

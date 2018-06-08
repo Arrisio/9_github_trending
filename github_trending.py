@@ -1,13 +1,22 @@
 import requests
-import datetime as DT
-import constants
+import datetime
 from urllib.parse import urljoin
+
+def get_repos_url():
+    return urljoin('https://api.github.com', '/search/repositories')
+
+def get_issues_url(repo_owner, repo_name):
+    return urljoin(
+        'https://api.github.com',
+        '/repos/{}/{}/issues'.format(repo_owner, repo_name))
 
 
 def get_trending_repositories(top_size=20):
-    repos_url = urljoin(constants.GITHUB_API_URL, constants.REPO_URL_PATH)
+    repos_url = get_repos_url()
 
-    week_ago_date_str = (DT.date.today() - DT.timedelta(days=7)).isoformat()
+    week_ago_date_str = (
+            datetime.date.today() - datetime.timedelta(days=7)
+    ).isoformat()
     request_params = {
         'q': 'created:>{}'.format(week_ago_date_str),
         'sort': 'stars',
@@ -15,36 +24,26 @@ def get_trending_repositories(top_size=20):
         'per_page': top_size
     }
 
-    request_response = requests.get(url=repos_url, params=request_params)
+    response = requests.get(url=repos_url, params=request_params)
+    if response.ok:
+        return response.json().get('items')
 
-    if request_response.ok:
-        return request_response.json()['items']
-    else:
-        raise ValueError("Can't get repos list")
 
 
 def get_open_issues_amount(repo_owner, repo_name):
-    issues_url = urljoin(
-        constants.GITHUB_API_URL,
-        constants.ISSUES_URL_PATH.format(repo_owner, repo_name)
-    )
+    issues_url = get_issues_url(repo_owner, repo_name)
 
     request_response = requests.get(url=issues_url)
     if request_response.ok:
         return len(request_response.json())
-    else:
-        raise ValueError("Can't get issues for this repository")
 
 
 def get_issues_by_list(repos_list):
     for repo in repos_list:
-        try:
-            repo['issues_cnt'] = get_open_issues_amount(
-                repo_owner=repo.get('owner').get('login'),
-                repo_name=repo.get('name')
-            )
-        except ValueError:
-            repo['issues_cnt'] = "Unknown"
+        repo['issues_count'] = get_open_issues_amount(
+            repo_owner=repo.get('owner').get('login'),
+            repo_name=repo.get('name')
+        )
 
     return repos_list
 
@@ -59,16 +58,16 @@ def print_repos(repos_list):
             row_template.format(
                 url=repo['html_url'],
                 stars=repo['stargazers_count'],
-                issues=repo['issues_cnt'],
+                issues=repo['issues_count'] or 'Unknown',
             )
         )
 
 
 if __name__ == '__main__':
-    try:
-        repos_list = get_trending_repositories(top_size=20)
-    except ValueError as request_error:
-        exit(request_error)
+    repos_list = get_trending_repositories(top_size=20)
+    if not repos_list:
+        exit("Can't get repos list")
+
 
     repos_list = get_issues_by_list(repos_list)
     print_repos(repos_list)
